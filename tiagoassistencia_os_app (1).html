@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TiagoAssistencia - Gestão de Ordens de Serviço</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Print Specific Styling */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+                padding: 10px;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
+
+        .tab-btn.active {
+            border-bottom-width: 3px;
+            border-color: #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        /* Video element for camera */
+        #camera-feed {
+            width: 100%;
+            max-height: 360px;
+            object-fit: cover;
+            background-color: #000;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50">
+
+    <!-- Top Header Navigation -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Logo & Title -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="app.navigate('dashboard')">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-black tracking-tight text-white flex items-center gap-1">
+                            Tiago<span class="text-blue-500">Assistencia</span>
+                        </span>
+                        <span class="block text-[10px] text-slate-400 font-medium -mt-1 tracking-wider uppercase">Manutenção & Tecnologia</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation Tabs -->
+                <nav class="hidden md:flex space-x-1">
+                    <button onclick="app.navigate('dashboard')" id="nav-dashboard" class="tab-btn active px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie"></i> Dashboard
+                    </button>
+                    <button onclick="app.navigate('list')" id="nav-list" class="tab-btn px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-list-check"></i> Ordens de Serviço
+                    </button>
+                    <button onclick="app.navigate('new')" id="nav-new" class="tab-btn px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-blue-400"></i> Nova OS
+                    </button>
+                    <button onclick="app.navigate('settings')" id="nav-settings" class="tab-btn px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-gear"></i> Configurações
+                    </button>
+                </nav>
+
+                <!-- Action Button -->
+                <div class="flex items-center gap-3">
+                    <button onclick="app.openNewOSForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-blue-500/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Nova OS</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Bottom Bar -->
+        <div class="md:hidden border-t border-slate-800 bg-slate-900 grid grid-cols-4 text-center py-2 text-xs">
+            <button onclick="app.navigate('dashboard')" class="text-slate-300 hover:text-blue-400 py-1 flex flex-col items-center gap-1">
+                <i class="fa-solid fa-chart-pie text-base"></i> Dashboard
+            </button>
+            <button onclick="app.navigate('list')" class="text-slate-300 hover:text-blue-400 py-1 flex flex-col items-center gap-1">
+                <i class="fa-solid fa-list-check text-base"></i> OSs
+            </button>
+            <button onclick="app.openNewOSForm()" class="text-blue-400 hover:text-blue-300 py-1 flex flex-col items-center gap-1 font-bold">
+                <i class="fa-solid fa-plus-circle text-base"></i> Nova
+            </button>
+            <button onclick="app.navigate('settings')" class="text-slate-300 hover:text-blue-400 py-1 flex flex-col items-center gap-1">
+                <i class="fa-solid fa-gear text-base"></i> Ajustes
+            </button>
+        </div>
+    </header>
+
+    <!-- Custom Toast Notification Container -->
+    <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 pointer-events-none no-print"></div>
+
+    <!-- Main Dynamic View Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full no-print">
+        
+        <!-- ================= VIEW 1: DASHBOARD ================= -->
+        <section id="view-dashboard" class="space-y-6">
+            <!-- Header Welcome Bar -->
+            <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Painel de Controle - <span class="text-blue-400">TiagoAssistencia</span></h1>
+                        <p class="text-slate-300 text-sm mt-1">Gestão inteligente de assistência técnica, laudos fotográficos e orçamentos.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="app.navigate('new')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-md transition flex items-center gap-2">
+                            <i class="fa-solid fa-circle-plus"></i> Criar Ordem de Serviço
+                        </button>
+                    </div>
+                </div>
+                <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            </div>
+
+            <!-- Dashboard KPI Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- Total OS -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Total de OS</span>
+                        <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i class="fa-solid fa-folder-open"></i></div>
+                    </div>
+                    <div id="kpi-total" class="text-2xl sm:text-3xl font-bold text-slate-800">0</div>
+                    <span class="text-[11px] text-slate-400">Registradas no sistema</span>
+                </div>
+
+                <!-- Aguardando -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Aguardando</span>
+                        <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i class="fa-solid fa-clock"></i></div>
+                    </div>
+                    <div id="kpi-waiting" class="text-2xl sm:text-3xl font-bold text-amber-600">0</div>
+                    <span class="text-[11px] text-slate-400">Avaliação/Orçamento</span>
+                </div>
+
+                <!-- Em Manutenção -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Manutenção</span>
+                        <div class="p-2 bg-purple-50 text-purple-600 rounded-lg"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                    </div>
+                    <div id="kpi-repair" class="text-2xl sm:text-3xl font-bold text-purple-600">0</div>
+                    <span class="text-[11px] text-slate-400">Em bancada</span>
+                </div>
+
+                <!-- Prontos -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Prontos</span>
+                        <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div id="kpi-ready" class="text-2xl sm:text-3xl font-bold text-emerald-600">0</div>
+                    <span class="text-[11px] text-slate-400">Aguardando retirada</span>
+                </div>
+
+                <!-- Faturamento -->
+                <div class="col-span-2 sm:col-span-1 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider">Faturamento</span>
+                        <div class="p-2 bg-teal-50 text-teal-600 rounded-lg"><i class="fa-solid fa-sack-dollar"></i></div>
+                    </div>
+                    <div id="kpi-revenue" class="text-xl sm:text-2xl font-bold text-teal-700">R$ 0,00</div>
+                    <span class="text-[11px] text-slate-400">OSs Entregues / Concluídas</span>
+                </div>
+            </div>
+
+            <!-- Recent OS Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Ordens de Serviço Recentes</h2>
+                        <p class="text-xs text-slate-500">Acompanhe e atualize o status dos equipamentos rapidamente</p>
+                    </div>
+                    <button onclick="app.navigate('list')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold flex items-center gap-1">
+                        Ver todas as OS <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-100">
+                                <th class="p-4">Nº OS / Data</th>
+                                <th class="p-4">Cliente</th>
+                                <th class="p-4">Aparelho</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Total</th>
+                                <th class="p-4 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-recent-table" class="divide-y divide-slate-100 text-sm">
+                            <!-- Populated dynamically via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: OS LISTING ================= -->
+        <section id="view-list" class="space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Ordens de Serviço</h1>
+                    <p class="text-slate-500 text-xs">Consulte, altere e imprima laudos de manutenção</p>
+                </div>
+                <button onclick="app.openNewOSForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-semibold text-sm shadow-md transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Nova Ordem de Serviço
+                </button>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                    <input type="text" id="search-os-input" onkeyup="app.filterOSList()" placeholder="Buscar por cliente, WhatsApp, aparelho, IMEI ou Nº OS..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex gap-2">
+                    <select id="filter-status-select" onchange="app.filterOSList()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="ALL">Todos os Status</option>
+                        <option value="Aguardando Avaliação">Aguardando Avaliação</option>
+                        <option value="Orçamento Aprovado">Orçamento Aprovado</option>
+                        <option value="Em Manutenção">Em Manutenção</option>
+                        <option value="Pronto para Retirada">Pronto para Retirada</option>
+                        <option value="Entregue">Entregue / Concluído</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Full Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-100">
+                                <th class="p-4">Nº OS</th>
+                                <th class="p-4">Data</th>
+                                <th class="p-4">Cliente / WhatsApp</th>
+                                <th class="p-4">Marca / Modelo</th>
+                                <th class="p-4">Fotos</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Valor Total</th>
+                                <th class="p-4 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-os-table-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Populated dynamically via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: OS FORM (CREATE & EDIT) ================= -->
+        <section id="view-form" class="space-y-6 hidden">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div>
+                    <h1 id="form-title" class="text-2xl font-bold text-slate-900">Nova Ordem de Serviço</h1>
+                    <p class="text-slate-500 text-xs">Preencha os dados do cliente, checklist de entrada e laudo fotográfico</p>
+                </div>
+                <button onclick="app.navigate('list')" class="text-slate-500 hover:text-slate-800 text-sm font-semibold flex items-center gap-1 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-solid fa-xmark"></i> Cancelar
+                </button>
+            </div>
+
+            <form id="os-form" onsubmit="app.handleFormSubmit(event)" class="space-y-6">
+                <input type="hidden" id="form-os-id" value="">
+
+                <!-- 1. Dados do Cliente -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-user text-blue-600"></i> 1. Dados do Cliente
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Completo *</label>
+                            <input type="text" id="client-name" required placeholder="Ex: Maria Silva" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">WhatsApp / Telefone *</label>
+                            <input type="text" id="client-phone" required placeholder="(11) 99999-9999" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">CPF (Opcional)</label>
+                            <input type="text" id="client-cpf" placeholder="000.000.000-00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">E-mail (Opcional)</label>
+                            <input type="email" id="client-email" placeholder="cliente@email.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Dados do Aparelho -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-mobile-screen text-blue-600"></i> 2. Dados do Equipamento
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Marca *</label>
+                            <input type="text" id="device-brand" required placeholder="Ex: Apple, Samsung, Xiaomi" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Modelo *</label>
+                            <input type="text" id="device-model" required placeholder="Ex: iPhone 13, Galaxy S21" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Cor</label>
+                            <input type="text" id="device-color" placeholder="Ex: Preto, Azul, Prata" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">IMEI / Número de Série</label>
+                            <input type="text" id="device-imei" placeholder="358941092837412" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Senha / Padrão</label>
+                            <input type="text" id="device-password" placeholder="Ex: 1234 ou Padrão Z" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Checklist Vistoria Inicial -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-check text-blue-600"></i> 3. Checklist de Vistoria de Entrada (12 itens)
+                        </h2>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="app.setChecklistAll(true)" class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition">Marcar Todos OK</button>
+                            <button type="button" onclick="app.setChecklistAll(false)" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg hover:bg-slate-200 transition">Limpar</button>
+                        </div>
+                    </div>
+
+                    <div id="checklist-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- 4. Laudo Fotográfico / Módulo de Câmera -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-camera text-blue-600"></i> 4. Módulo de Fotos & Vistoria Técnica
+                            </h2>
+                            <p class="text-xs text-slate-500">Tire fotos com a câmera do dispositivo ou envie da galeria</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="app.openCameraModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-camera"></i> Usar Câmera
+                            </button>
+                            <label class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm cursor-pointer transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-upload"></i> Galeria
+                                <input type="file" id="file-photo-input" accept="image/*" multiple onchange="app.handleFileUpload(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Photo Tag Selector before adding -->
+                    <div class="flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <span class="text-xs font-semibold text-slate-600">Categoria da Próxima Foto:</span>
+                        <select id="photo-tag-select" class="bg-white border border-slate-200 rounded-lg text-xs px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none">
+                            <option value="Frente/Tela">Frente / Tela</option>
+                            <option value="Traseira">Traseira / Tampa</option>
+                            <option value="Avaria/Trinca">Avaria / Trinca / Risco</option>
+                            <option value="Acessório/Placa">Acessório / Placa</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+
+                    <!-- Photo Gallery Preview Container -->
+                    <div id="form-photos-preview" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 min-h-[90px] p-3 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                        <!-- JS Thumbnails rendered here -->
+                        <div id="no-photos-msg" class="col-span-full text-center py-6 text-slate-400 text-xs flex flex-col items-center gap-2">
+                            <i class="fa-regular fa-image text-2xl text-slate-300"></i>
+                            Nenhuma foto anexada a este laudo ainda.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Diagnóstico e Orçamento -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-calculator text-blue-600"></i> 5. Problema Relatado e Orçamento
+                    </h2>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Defeito Relatado / Observações do Cliente *</label>
+                        <textarea id="device-problem" required rows="2" placeholder="Ex: Aparelho caiu na água, tela trincada não dá toque, conector com folga..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <!-- Financial Items -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor de Peças (R$)</label>
+                            <input type="number" step="0.01" min="0" id="cost-parts" oninput="app.calculateTotal()" value="0.00" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Mão de Obra (R$)</label>
+                            <input type="number" step="0.01" min="0" id="cost-labor" oninput="app.calculateTotal()" value="0.00" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Desconto (R$)</label>
+                            <input type="number" step="0.01" min="0" id="cost-discount" oninput="app.calculateTotal()" value="0.00" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <span class="text-sm font-bold text-blue-900">VALOR TOTAL DA OS:</span>
+                        <span id="calculated-total-display" class="text-2xl font-black text-blue-700">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- 6. Status da OS e Notas Internas -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-list-check text-blue-600"></i> 6. Status e Observações Internas
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Status Atual da Ordem *</label>
+                            <select id="os-status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="Aguardando Avaliação">Aguardando Avaliação</option>
+                                <option value="Orçamento Aprovado">Orçamento Aprovado</option>
+                                <option value="Em Manutenção">Em Manutenção</option>
+                                <option value="Pronto para Retirada">Pronto para Retirada</option>
+                                <option value="Entregue">Entregue / Concluído</option>
+                                <option value="Cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Anotações Internas (Técnico)</label>
+                            <input type="text" id="internal-notes" placeholder="Ex: Fornecedor X, tela original trocada em 15/10" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button Bar -->
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" onclick="app.navigate('list')" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-100 transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar Ordem de Serviço
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ================= VIEW 4: STORE SETTINGS ================= -->
+        <section id="view-settings" class="space-y-6 hidden">
+            <div class="border-b border-slate-200 pb-4">
+                <h1 class="text-2xl font-bold text-slate-900">Configurações da Loja</h1>
+                <p class="text-slate-500 text-xs">Personalize a identidade da sua assistência técnica, contatos e termos impressos</p>
+            </div>
+
+            <form id="settings-form" onsubmit="app.saveSettings(event)" class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Fantasia da Assistência *</label>
+                        <input type="text" id="setting-store-name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">WhatsApp / Telefone Oficial *</label>
+                        <input type="text" id="setting-store-phone" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">CNPJ / CPF</label>
+                        <input type="text" id="setting-store-cnpj" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Chave Pix para Pagamentos</label>
+                        <input type="text" id="setting-store-pix" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div class="col-span-full">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Endereço Completo</label>
+                        <input type="text" id="setting-store-address" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Termos Legais e Garantia de 90 dias (Impresso no comprovante)</label>
+                    <textarea id="setting-store-terms" rows="5" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                    <button type="button" onclick="app.resetMockData()" class="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> Restaurar Dados Exemplo de Teste
+                    </button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar Configurações
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- ================= CAMERA MODAL ================= -->
+    <div id="modal-camera" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-blue-400"></i> Capturar Foto com a Câmera
+                </h3>
+                <button onclick="app.closeCameraModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-4 bg-black flex justify-center items-center relative min-h-[280px]">
+                <video id="camera-feed" autoplay playsinline></video>
+                <canvas id="camera-canvas" class="hidden"></canvas>
+            </div>
+            <div class="p-4 bg-slate-100 flex items-center justify-between gap-2">
+                <button onclick="app.switchCamera()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-camera-rotate text-sm"></i> Alternar Câmera
+                </button>
+                <button onclick="app.captureCameraPhoto()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2">
+                    <i class="fa-solid fa-circle text-rose-500"></i> Tirar Foto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= LIGHTBOX PREVIEW MODAL ================= -->
+    <div id="modal-lightbox" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 hidden no-print">
+        <div class="absolute top-4 right-4 flex items-center gap-3">
+            <button id="lightbox-delete-btn" onclick="app.deleteCurrentLightboxPhoto()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                <i class="fa-solid fa-trash"></i> Excluir
+            </button>
+            <button onclick="app.closeLightbox()" class="text-white hover:text-slate-300 text-2xl p-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <img id="lightbox-img" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl">
+        <span id="lightbox-tag" class="mt-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Tag</span>
+    </div>
+
+    <!-- ================= WHATSAPP MESSAGE MODAL ================= -->
+    <div id="modal-whatsapp" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-4 bg-emerald-600 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Enviar Notificação via WhatsApp
+                </h3>
+                <button onclick="app.closeWhatsAppModal()" class="text-white/80 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Destinatário</label>
+                    <input type="text" id="wa-phone-preview" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Mensagem Formatada</label>
+                    <textarea id="wa-message-text" rows="8" class="w-full p-3 bg-emerald-50/50 border border-emerald-200 rounded-xl text-xs font-mono leading-relaxed text-slate-800 focus:outline-none"></textarea>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 flex justify-end gap-2 border-t border-slate-100">
+                <button onclick="app.closeWhatsAppModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200">Cancelar</button>
+                <button onclick="app.sendWhatsAppDirect()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-sm"></i> Abrir WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PRINT AREA (COMPROVANTE DE ENTRADA & LAUDO) ================= -->
+    <div id="print-area" class="hidden">
+        <div class="max-w-3xl mx-auto p-4 space-y-4 text-slate-900 text-xs">
+            <!-- Header -->
+            <div class="flex justify-between items-center border-b-2 border-slate-900 pb-3">
+                <div>
+                    <h1 class="text-2xl font-black tracking-wider uppercase" id="print-store-name">TiagoAssistencia</h1>
+                    <p class="font-medium" id="print-store-address">Assistência Técnica Especializada em Celulares</p>
+                    <p id="print-store-phone">WhatsApp: (00) 00000-0000</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-xl font-extrabold" id="print-os-number">ORDEM DE SERVIÇO Nº 0000</div>
+                    <div class="text-slate-600" id="print-os-date">Data: 00/00/0000</div>
+                    <div class="inline-block mt-1 px-2 py-0.5 border border-black font-bold uppercase text-[10px]" id="print-os-status">AGUARDANDO</div>
+                </div>
+            </div>
+
+            <!-- Client & Device Info Grid -->
+            <div class="grid grid-cols-2 gap-4 border border-slate-300 p-3 rounded">
+                <div>
+                    <h3 class="font-bold border-b border-slate-300 pb-1 mb-1">DADOS DO CLIENTE</h3>
+                    <p><strong>Nome:</strong> <span id="print-client-name">-</span></p>
+                    <p><strong>WhatsApp:</strong> <span id="print-client-phone">-</span></p>
+                    <p><strong>CPF:</strong> <span id="print-client-cpf">-</span></p>
+                </div>
+                <div>
+                    <h3 class="font-bold border-b border-slate-300 pb-1 mb-1">DADOS DO APARELHO</h3>
+                    <p><strong>Aparelho:</strong> <span id="print-device-name">-</span></p>
+                    <p><strong>Cor:</strong> <span id="print-device-color">-</span> | <strong>Senha:</strong> <span id="print-device-password">-</span></p>
+                    <p><strong>IMEI:</strong> <span id="print-device-imei">-</span></p>
+                </div>
+            </div>
+
+            <!-- Problem & Financials -->
+            <div class="border border-slate-300 p-3 rounded space-y-2">
+                <h3 class="font-bold border-b border-slate-300 pb-1">DEFEITO RELATADO & DIAGNÓSTICO</h3>
+                <p id="print-device-problem" class="italic text-slate-800"></p>
+                
+                <div class="pt-2 flex justify-between items-end border-t border-slate-200">
+                    <div>
+                        <p><strong>Peças:</strong> <span id="print-cost-parts">R$ 0,00</span></p>
+                        <p><strong>Mão de Obra:</strong> <span id="print-cost-labor">R$ 0,00</span></p>
+                        <p><strong>Desconto:</strong> <span id="print-cost-discount">R$ 0,00</span></p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-bold uppercase">VALOR TOTAL: </span>
+                        <span id="print-cost-total" class="text-lg font-black">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checklist Summary -->
+            <div class="border border-slate-300 p-3 rounded">
+                <h3 class="font-bold border-b border-slate-300 pb-1 mb-2">CHECKLIST DE VISTORIA INICIAL</h3>
+                <div id="print-checklist-grid" class="grid grid-cols-3 gap-1 text-[10px]">
+                    <!-- JS Filled -->
+                </div>
+            </div>
+
+            <!-- Photos Section -->
+            <div class="border border-slate-300 p-3 rounded">
+                <h3 class="font-bold border-b border-slate-300 pb-2 mb-2">LAUDO FOTOGRÁFICO DE ENTRADA</h3>
+                <div id="print-photos-grid" class="grid grid-cols-4 gap-2">
+                    <!-- JS Filled -->
+                </div>
+            </div>
+
+            <!-- Legal Warranty Terms -->
+            <div class="border border-slate-300 p-2.5 rounded text-[9px] leading-tight text-justify">
+                <h4 class="font-bold uppercase mb-1">TERMO DE GARANTIA E CONDIÇÕES DE SERVIÇO:</h4>
+                <p id="print-warranty-terms"></p>
+            </div>
+
+            <!-- Signatures -->
+            <div class="grid grid-cols-2 gap-8 pt-8 text-center text-[10px]">
+                <div class="border-t border-slate-400 pt-1">
+                    <p class="font-bold" id="print-sig-client-name">Assinatura do Cliente</p>
+                    <p class="text-slate-500">De acordo com a vistoria e orçamento</p>
+                </div>
+                <div class="border-t border-slate-400 pt-1">
+                    <p class="font-bold" id="print-sig-store-name">TiagoAssistencia</p>
+                    <p class="text-slate-500">Técnico Responsável</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT APPLICATION LOGIC ================= -->
+    <script>
+        const APP_STORAGE_KEY = 'tiago_assistencia_os_data_v2';
+        const APP_SETTINGS_KEY = 'tiago_assistencia_settings_v2';
+
+        const CHECKLIST_ITEMS = [
+            "Tela / Touch Screen",
+            "Bateria / Carga",
+            "Conector Conector Carga",
+            "Câmera Frontal",
+            "Câmera Traseira",
+            "Alto-falante / Som",
+            "Microfone",
+            "Biometria / Face ID",
+            "Botões Físicos",
+            "Wi-Fi / Bluetooth",
+            "Sinais de Queda / Risco",
+            "Sinais de Oxidação / Água"
+        ];
+
+        // Sample initial settings
+        const DEFAULT_SETTINGS = {
+            storeName: "TiagoAssistencia",
+            storePhone: "(11) 98765-4321",
+            storeCNPJ: "12.345.678/0001-90",
+            storeAddress: "Av. Paulista, 1000 - Centro, São Paulo - SP",
+            storePix: "11987654321",
+            terms: "1. Equipamentos não retirados em até 90 dias poderão ser vendidos para cobrir custos de peças e bancada.\n2. A garantia cobre exclusivamente as peças substituídas e os serviços prestados durante o prazo legally estipulado de 90 dias.\n3. A garantia perderá a validade em caso de queda, contato com água/líquidos, violação do selo de garantia ou intervenção por terceiros."
+        };
+
+        // Sample initial OS list
+        const MOCK_OS_DATA = [
+            {
+                id: "OS-1001",
+                createdAt: "2026-03-28T10:30:00.000Z",
+                clientName: "Carlos Eduardo Santos",
+                clientPhone: "(11) 99123-4567",
+                clientCPF: "123.456.789-00",
+                clientEmail: "carlos.santos@email.com",
+                brand: "Apple",
+                model: "iPhone 12 Pro",
+                color: "Azul Pacífico",
+                imei: "359871029384712",
+                password: "123456",
+                problem: "Tela quebrada após queda. Touch não responde na metade inferior.",
+                checklist: {
+                    "Tela / Touch Screen": "DEFEITO",
+                    "Bateria / Carga": "OK",
+                    "Conector Conector Carga": "OK",
+                    "Câmera Frontal": "OK",
+                    "Câmera Traseira": "OK",
+                    "Alto-falante / Som": "OK",
+                    "Microfone": "OK",
+                    "Biometria / Face ID": "OK",
+                    "Botões Físicos": "OK",
+                    "Wi-Fi / Bluetooth": "OK",
+                    "Sinais de Queda / Risco": "DEFEITO",
+                    "Sinais de Oxidação / Água": "OK"
+                },
+                costParts: 350.00,
+                costLabor: 150.00,
+                costDiscount: 0.00,
+                total: 500.00,
+                status: "Em Manutenção",
+                notes: "Tela Incell encomendada com fornecedor X",
+                photos: [
+                    {
+                        tag: "Frente/Tela",
+                        dataUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'><rect width='100%' height='100%' fill='%231e293b'/><text x='50%' y='45%' fill='%2338bdf8' font-size='18' font-family='sans-serif' text-anchor='middle'>TiagoAssistencia</text><text x='50%' y='60%' fill='%2394a3b8' font-size='14' font-family='sans-serif' text-anchor='middle'>[ Foto Vistoria: Tela Trincada ]</text></svg>"
+                    }
+                ]
+            },
+            {
+                id: "OS-1002",
+                createdAt: "2026-03-29T14:15:00.000Z",
+                clientName: "Amanda Ribeiro",
+                clientPhone: "(11) 98877-6655",
+                clientCPF: "987.654.321-11",
+                clientEmail: "amanda@gmail.com",
+                brand: "Samsung",
+                model: "Galaxy S21 Ultra",
+                color: "Preto",
+                imei: "351239847192837",
+                password: "Desenho em L",
+                problem: "Aparelho não segura carga e esquenta bastante ao carregar.",
+                checklist: {
+                    "Tela / Touch Screen": "OK",
+                    "Bateria / Carga": "DEFEITO",
+                    "Conector Conector Carga": "OK",
+                    "Câmera Frontal": "OK",
+                    "Câmera Traseira": "OK",
+                    "Alto-falante / Som": "OK",
+                    "Microfone": "OK",
+                    "Biometria / Face ID": "OK",
+                    "Botões Físicos": "OK",
+                    "Wi-Fi / Bluetooth": "OK",
+                    "Sinais de Queda / Risco": "OK",
+                    "Sinais de Oxidação / Água": "OK"
+                },
+                costParts: 180.00,
+                costLabor: 100.00,
+                costDiscount: 20.00,
+                total: 260.00,
+                status: "Pronto para Retirada",
+                notes: "Bateria trocada e testada por 12h",
+                photos: []
+            }
+        ];
+
+        class TiagoAssistenciaApp {
+            constructor() {
+                this.osList = [];
+                this.settings = DEFAULT_SETTINGS;
+                this.currentPhotos = []; // Photos for current OS being created/edited
+                this.cameraStream = null;
+                this.currentFacingMode = 'environment';
+                this.activeLightboxIndex = -1;
+
+                this.init();
+            }
+
+            init() {
+                this.loadSettings();
+                this.loadOSData();
+                this.renderChecklistForm();
+                this.updateDashboard();
+                this.renderOSList();
+                this.navigate('dashboard');
+            }
+
+            /* Storage Handlers */
+            loadSettings() {
+                try {
+                    const saved = localStorage.getItem(APP_SETTINGS_KEY);
+                    if (saved) {
+                        this.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+                    }
+                } catch (e) {
+                    console.error("Error loading settings", e);
+                }
+                // Fill settings form
+                document.getElementById('setting-store-name').value = this.settings.storeName;
+                document.getElementById('setting-store-phone').value = this.settings.storePhone;
+                document.getElementById('setting-store-cnpj').value = this.settings.storeCNPJ;
+                document.getElementById('setting-store-address').value = this.settings.storeAddress;
+                document.getElementById('setting-store-pix').value = this.settings.storePix;
+                document.getElementById('setting-store-terms').value = this.settings.terms;
+            }
+
+            saveSettings(e) {
+                e.preventDefault();
+                this.settings = {
+                    storeName: document.getElementById('setting-store-name').value,
+                    storePhone: document.getElementById('setting-store-phone').value,
+                    storeCNPJ: document.getElementById('setting-store-cnpj').value,
+                    storeAddress: document.getElementById('setting-store-address').value,
+                    storePix: document.getElementById('setting-store-pix').value,
+                    terms: document.getElementById('setting-store-terms').value
+                };
+                localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(this.settings));
+                this.showToast('Configurações salvas com sucesso!', 'success');
+            }
+
+            loadOSData() {
+                try {
+                    const saved = localStorage.getItem(APP_STORAGE_KEY);
+                    if (saved) {
+                        this.osList = JSON.parse(saved);
+                    } else {
+                        this.osList = MOCK_OS_DATA;
+                        this.saveOSData();
+                    }
+                } catch (e) {
+                    console.error("Error loading OS data", e);
+                    this.osList = MOCK_OS_DATA;
+                }
+            }
+
+            saveOSData() {
+                try {
+                    localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(this.osList));
+                } catch (e) {
+                    this.showToast('Limite de memória atingido ao salvar fotos. Tente enviar fotos menores.', 'error');
+                }
+            }
+
+            resetMockData() {
+                this.osList = MOCK_OS_DATA;
+                this.settings = DEFAULT_SETTINGS;
+                localStorage.removeItem(APP_STORAGE_KEY);
+                localStorage.removeItem(APP_SETTINGS_KEY);
+                this.init();
+                this.showToast('Dados de exemplo restaurados!', 'info');
+            }
+
+            navigate(viewName) {
+                const views = ['dashboard', 'list', 'form', 'settings'];
+                views.forEach(v => {
+                    const el = document.getElementById(`view-${v}`);
+                    const nav = document.getElementById(`nav-${v}`);
+                    if (el) el.classList.add('hidden');
+                    if (nav) nav.classList.remove('active');
+                });
+
+                const activeView = document.getElementById(`view-${viewName}`);
+                const activeNav = document.getElementById(`nav-${viewName}`);
+                if (activeView) activeView.classList.remove('hidden');
+                if (activeNav) activeNav.classList.add('active');
+
+                if (viewName === 'dashboard') this.updateDashboard();
+                if (viewName === 'list') this.renderOSList();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            openNewOSForm() {
+                document.getElementById('form-os-id').value = '';
+                document.getElementById('form-title').innerText = 'Nova Ordem de Serviço';
+                document.getElementById('os-form').reset();
+                this.currentPhotos = [];
+                this.renderPhotoThumbnails();
+                this.setChecklistAll(true);
+                this.calculateTotal();
+                this.navigate('form');
+            }
+
+            editOS(osId) {
+                const os = this.osList.find(item => item.id === osId);
+                if (!os) return;
+
+                document.getElementById('form-os-id').value = os.id;
+                document.getElementById('form-title').innerText = `Editar OS - ${os.id}`;
+                
+                document.getElementById('client-name').value = os.clientName || '';
+                document.getElementById('client-phone').value = os.clientPhone || '';
+                document.getElementById('client-cpf').value = os.clientCPF || '';
+                document.getElementById('client-email').value = os.clientEmail || '';
+
+                document.getElementById('device-brand').value = os.brand || '';
+                document.getElementById('device-model').value = os.model || '';
+                document.getElementById('device-color').value = os.color || '';
+                document.getElementById('device-imei').value = os.imei || '';
+                document.getElementById('device-password').value = os.password || '';
+
+                document.getElementById('device-problem').value = os.problem || '';
+                document.getElementById('cost-parts').value = os.costParts || 0;
+                document.getElementById('cost-labor').value = os.costLabor || 0;
+                document.getElementById('cost-discount').value = os.costDiscount || 0;
+                document.getElementById('os-status').value = os.status || 'Aguardando Avaliação';
+                document.getElementById('internal-notes').value = os.notes || '';
+
+                // Populate checklist
+                CHECKLIST_ITEMS.forEach(item => {
+                    const status = os.checklist ? os.checklist[item] : 'OK';
+                    const radio = document.querySelector(`input[name="chk-${item}"][value="${status}"]`);
+                    if (radio) radio.checked = true;
+                });
+
+                this.currentPhotos = os.photos ? [...os.photos] : [];
+                this.renderPhotoThumbnails();
+                this.calculateTotal();
+                this.navigate('form');
+            }
+
+            renderChecklistForm() {
+                const container = document.getElementById('checklist-container');
+                if (!container) return;
+                container.innerHTML = '';
+
+                CHECKLIST_ITEMS.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = "bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex flex-col justify-between gap-1.5";
+                    div.innerHTML = `
+                        <span class="font-semibold text-slate-700 truncate" title="${item}">${item}</span>
+                        <div class="flex items-center gap-2">
+                            <label class="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="chk-${item}" value="OK" checked class="text-emerald-600 focus:ring-emerald-500">
+                                <span class="text-[11px] text-emerald-700 font-semibold">OK</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="chk-${item}" value="DEFEITO" class="text-rose-600 focus:ring-rose-500">
+                                <span class="text-[11px] text-rose-600 font-semibold">Defeito</span>
+                            </label>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            setChecklistAll(isOK) {
+                CHECKLIST_ITEMS.forEach(item => {
+                    const val = isOK ? 'OK' : 'DEFEITO';
+                    const radio = document.querySelector(`input[name="chk-${item}"][value="${val}"]`);
+                    if (radio) radio.checked = true;
+                });
+            }
+
+            getChecklistValues() {
+                const values = {};
+                CHECKLIST_ITEMS.forEach(item => {
+                    const selected = document.querySelector(`input[name="chk-${item}"]:checked`);
+                    values[item] = selected ? selected.value : 'OK';
+                });
+                return values;
+            }
+
+            calculateTotal() {
+                const parts = parseFloat(document.getElementById('cost-parts').value) || 0;
+                const labor = parseFloat(document.getElementById('cost-labor').value) || 0;
+                const discount = parseFloat(document.getElementById('cost-discount').value) || 0;
+
+                const total = Math.max(0, (parts + labor) - discount);
+                document.getElementById('calculated-total-display').innerText = this.formatCurrency(total);
+                return total;
+            }
+
+            formatCurrency(val) {
+                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+            }
+
+            formatDate(isoString) {
+                if (!isoString) return '-';
+                const date = new Date(isoString);
+                return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            async handleFileUpload(event) {
+                const files = event.target.files;
+                if (!files || files.length === 0) return;
+
+                const tag = document.getElementById('photo-tag-select').value;
+                for (let file of files) {
+                    const compressedBase64 = await this.compressImageFile(file);
+                    this.currentPhotos.push({
+                        tag: tag,
+                        dataUrl: compressedBase64
+                    });
+                }
+                this.renderPhotoThumbnails();
+                event.target.value = '';
+                this.showToast('Foto(s) adicionada(s) ao laudo!', 'success');
+            }
+
+            compressImageFile(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > height) {
+                                if (width > maxWidth) {
+                                    height = Math.round((height * maxWidth) / width);
+                                    width = maxWidth;
+                                }
+                            } else {
+                                if (height > maxHeight) {
+                                    width = Math.round((width * maxHeight) / height);
+                                    height = maxHeight;
+                                }
+                            }
+
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            const compressed = canvas.toDataURL('image/jpeg', quality);
+                            resolve(compressed);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            renderPhotoThumbnails() {
+                const container = document.getElementById('form-photos-preview');
+                container.innerHTML = '';
+
+                if (this.currentPhotos.length === 0) {
+                    container.innerHTML = `
+                        <div id="no-photos-msg" class="col-span-full text-center py-6 text-slate-400 text-xs flex flex-col items-center gap-2">
+                            <i class="fa-regular fa-image text-2xl text-slate-300"></i>
+                            Nenhuma foto anexada a este laudo ainda.
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.currentPhotos.forEach((photo, idx) => {
+                    const card = document.createElement('div');
+                    card.className = "relative group rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm flex flex-col";
+                    card.innerHTML = `
+                        <img src="${photo.dataUrl}" onclick="app.openLightbox(${idx})" class="w-full h-24 object-cover cursor-pointer hover:opacity-90 transition">
+                        <span class="bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 text-center truncate">${photo.tag}</span>
+                        <button type="button" onclick="app.removePhoto(${idx})" class="absolute top-1 right-1 bg-rose-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-80 hover:opacity-100 transition shadow">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            removePhoto(idx) {
+                this.currentPhotos.splice(idx, 1);
+                this.renderPhotoThumbnails();
+            }
+
+            /* Camera Handlers */
+            async openCameraModal() {
+                const modal = document.getElementById('modal-camera');
+                modal.classList.remove('hidden');
+                await this.startCamera();
+            }
+
+            async startCamera() {
+                try {
+                    if (this.cameraStream) {
+                        this.cameraStream.getTracks().forEach(track => track.stop());
+                    }
+                    this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: this.currentFacingMode },
+                        audio: false
+                    });
+                    const video = document.getElementById('camera-feed');
+                    video.srcObject = this.cameraStream;
+                } catch (err) {
+                    this.showToast('Câmera indisponível ou permissão negada. Use a galeria.', 'error');
+                    this.closeCameraModal();
+                }
+            }
+
+            switchCamera() {
+                this.currentFacingMode = this.currentFacingMode === 'environment' ? 'user' : 'environment';
+                this.startCamera();
+            }
+
+            captureCameraPhoto() {
+                const video = document.getElementById('camera-feed');
+                const canvas = document.getElementById('camera-canvas');
+                if (!video || !this.cameraStream) return;
+
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                const tag = document.getElementById('photo-tag-select').value;
+
+                this.currentPhotos.push({ tag: tag, dataUrl: dataUrl });
+                this.renderPhotoThumbnails();
+                this.closeCameraModal();
+                this.showToast('Foto capturada com sucesso!', 'success');
+            }
+
+            closeCameraModal() {
+                if (this.cameraStream) {
+                    this.cameraStream.getTracks().forEach(track => track.stop());
+                    this.cameraStream = null;
+                }
+                document.getElementById('modal-camera').classList.add('hidden');
+            }
+
+            /* Lightbox */
+            openLightbox(idx) {
+                this.activeLightboxIndex = idx;
+                const photo = this.currentPhotos[idx];
+                if (!photo) return;
+
+                document.getElementById('lightbox-img').src = photo.dataUrl;
+                document.getElementById('lightbox-tag').innerText = photo.tag;
+                document.getElementById('modal-lightbox').classList.remove('hidden');
+            }
+
+            closeLightbox() {
+                document.getElementById('modal-lightbox').classList.add('hidden');
+            }
+
+            deleteCurrentLightboxPhoto() {
+                if (this.activeLightboxIndex >= 0) {
+                    this.removePhoto(this.activeLightboxIndex);
+                    this.closeLightbox();
+                }
+            }
+
+            handleFormSubmit(e) {
+                e.preventDefault();
+
+                const existingId = document.getElementById('form-os-id').value;
+                const isNew = !existingId;
+
+                const newOS = {
+                    id: isNew ? `OS-${Math.floor(1000 + Math.random() * 9000)}` : existingId,
+                    createdAt: isNew ? new Date().toISOString() : (this.osList.find(o => o.id === existingId)?.createdAt || new Date().toISOString()),
+                    clientName: document.getElementById('client-name').value,
+                    clientPhone: document.getElementById('client-phone').value,
+                    clientCPF: document.getElementById('client-cpf').value,
+                    clientEmail: document.getElementById('client-email').value,
+                    brand: document.getElementById('device-brand').value,
+                    model: document.getElementById('device-model').value,
+                    color: document.getElementById('device-color').value,
+                    imei: document.getElementById('device-imei').value,
+                    password: document.getElementById('device-password').value,
+                    problem: document.getElementById('device-problem').value,
+                    checklist: this.getChecklistValues(),
+                    costParts: parseFloat(document.getElementById('cost-parts').value) || 0,
+                    costLabor: parseFloat(document.getElementById('cost-labor').value) || 0,
+                    costDiscount: parseFloat(document.getElementById('cost-discount').value) || 0,
+                    total: this.calculateTotal(),
+                    status: document.getElementById('os-status').value,
+                    notes: document.getElementById('internal-notes').value,
+                    photos: [...this.currentPhotos]
+                };
+
+                if (isNew) {
+                    this.osList.unshift(newOS);
+                    this.showToast(`Ordem de Serviço ${newOS.id} criada!`, 'success');
+                } else {
+                    const idx = this.osList.findIndex(o => o.id === existingId);
+                    if (idx !== -1) {
+                        this.osList[idx] = newOS;
+                        this.showToast(`Ordem de Serviço ${newOS.id} atualizada!`, 'success');
+                    }
+                }
+
+                this.saveOSData();
+                this.navigate('list');
+            }
+
+            deleteOS(osId) {
+                if (window.confirm(`Deseja realmente excluir a OS ${osId}? Esta ação não pode ser desfeita.`)) {
+                    this.osList = this.osList.filter(o => o.id !== osId);
+                    this.saveOSData();
+                    this.renderOSList();
+                    this.updateDashboard();
+                    this.showToast(`OS ${osId} removida.`, 'info');
+                }
+            }
+
+            updateDashboard() {
+                const total = this.osList.length;
+                const waiting = this.osList.filter(o => o.status === 'Aguardando Avaliação').length;
+                const repair = this.osList.filter(o => o.status === 'Em Manutenção').length;
+                const ready = this.osList.filter(o => o.status === 'Pronto para Retirada').length;
+                
+                const revenue = this.osList
+                    .filter(o => o.status === 'Entregue')
+                    .reduce((acc, curr) => acc + (curr.total || 0), 0);
+
+                document.getElementById('kpi-total').innerText = total;
+                document.getElementById('kpi-waiting').innerText = waiting;
+                document.getElementById('kpi-repair').innerText = repair;
+                document.getElementById('kpi-ready').innerText = ready;
+                document.getElementById('kpi-revenue').innerText = this.formatCurrency(revenue);
+
+                // Recent Table
+                const tbody = document.getElementById('dashboard-recent-table');
+                tbody.innerHTML = '';
+
+                const recents = this.osList.slice(0, 5);
+                if (recents.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhuma OS encontrada.</td></tr>`;
+                    return;
+                }
+
+                recents.forEach(os => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-4">
+                            <span class="font-bold text-blue-600">${os.id}</span>
+                            <span class="block text-[11px] text-slate-400">${this.formatDate(os.createdAt)}</span>
+                        </td>
+                        <td class="p-4 font-medium text-slate-800">${os.clientName}</td>
+                        <td class="p-4">${os.brand} ${os.model}</td>
+                        <td class="p-4">${this.renderStatusBadge(os.status)}</td>
+                        <td class="p-4 font-bold text-slate-900">${this.formatCurrency(os.total)}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="app.editOS('${os.id}')" title="Editar" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="app.openWhatsAppModal('${os.id}')" title="WhatsApp" class="p-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg text-xs"><i class="fa-brands fa-whatsapp"></i></button>
+                                <button onclick="app.printOS('${os.id}')" title="Imprimir" class="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs"><i class="fa-solid fa-print"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            renderOSList() {
+                const search = (document.getElementById('search-os-input')?.value || '').toLowerCase();
+                const statusFilter = document.getElementById('filter-status-select')?.value || 'ALL';
+
+                const filtered = this.osList.filter(os => {
+                    const matchesSearch = 
+                        os.id.toLowerCase().includes(search) ||
+                        (os.clientName && os.clientName.toLowerCase().includes(search)) ||
+                        (os.clientPhone && os.clientPhone.includes(search)) ||
+                        (os.brand && os.brand.toLowerCase().includes(search)) ||
+                        (os.model && os.model.toLowerCase().includes(search)) ||
+                        (os.imei && os.imei.toLowerCase().includes(search));
+
+                    const matchesStatus = statusFilter === 'ALL' || os.status === statusFilter;
+
+                    return matchesSearch && matchesStatus;
+                });
+
+                const tbody = document.getElementById('full-os-table-body');
+                tbody.innerHTML = '';
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">Nenhuma Ordem de Serviço encontrada com os filtros atuais.</td></tr>`;
+                    return;
+                }
+
+                filtered.forEach(os => {
+                    const photoCount = os.photos ? os.photos.length : 0;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                    tr.innerHTML = `
+                        <td class="p-4 font-bold text-blue-600">${os.id}</td>
+                        <td class="p-4 text-xs text-slate-500">${this.formatDate(os.createdAt)}</td>
+                        <td class="p-4">
+                            <span class="font-semibold text-slate-800 block">${os.clientName}</span>
+                            <span class="text-xs text-slate-400">${os.clientPhone}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="font-medium text-slate-700 block">${os.brand} ${os.model}</span>
+                            <span class="text-[11px] text-slate-400">${os.imei ? 'IMEI: ' + os.imei : ''}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${photoCount > 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-400'}">
+                                <i class="fa-solid fa-camera"></i> ${photoCount}
+                            </span>
+                        </td>
+                        <td class="p-4">${this.renderStatusBadge(os.status)}</td>
+                        <td class="p-4 font-bold text-slate-900">${this.formatCurrency(os.total)}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="app.editOS('${os.id}')" title="Editar" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs transition"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="app.openWhatsAppModal('${os.id}')" title="Enviar WhatsApp" class="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg text-xs transition"><i class="fa-brands fa-whatsapp"></i></button>
+                                <button onclick="app.printOS('${os.id}')" title="Imprimir Laudo" class="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs transition"><i class="fa-solid fa-print"></i></button>
+                                <button onclick="app.deleteOS('${os.id}')" title="Excluir OS" class="p-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs transition"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            filterOSList() {
+                this.renderOSList();
+            }
+
+            renderStatusBadge(status) {
+                const map = {
+                    'Aguardando Avaliação': 'bg-amber-100 text-amber-800 border-amber-200',
+                    'Orçamento Aprovado': 'bg-blue-100 text-blue-800 border-blue-200',
+                    'Em Manutenção': 'bg-purple-100 text-purple-800 border-purple-200',
+                    'Pronto para Retirada': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                    'Entregue': 'bg-slate-200 text-slate-800 border-slate-300',
+                    'Cancelado': 'bg-rose-100 text-rose-800 border-rose-200'
+                };
+                const style = map[status] || 'bg-slate-100 text-slate-800';
+                return `<span class="px-2.5 py-1 text-[11px] font-bold rounded-full border ${style}">${status}</span>`;
+            }
+
+            openWhatsAppModal(osId) {
+                const os = this.osList.find(o => o.id === osId);
+                if (!os) return;
+
+                const cleanPhone = os.clientPhone ? os.clientPhone.replace(/\D/g, '') : '';
+                document.getElementById('wa-phone-preview').value = os.clientPhone || 'Sem telefone';
+
+                const text = `Olá *${os.clientName}*,\n\nAqui é da *${this.settings.storeName}*! 🛠️\n` +
+                    `Atualização da sua *Ordem de Serviço Nº ${os.id}*:\n\n` +
+                    `📱 *Aparelho:* ${os.brand} ${os.model}\n` +
+                    `📊 *Status Atual:* ${os.status}\n` +
+                    `💰 *Valor Total:* ${this.formatCurrency(os.total)}\n\n` +
+                    (os.status === 'Pronto para Retirada' ? '✅ *Seu aparelho já está PRONTO para retirada em nossa loja!*\n\n' : '') +
+                    `Caso tenha dúvidas, estamos à disposição!\n` +
+                    `📍 *${this.settings.storeName}*`;
+
+                document.getElementById('wa-message-text').value = text;
+                document.getElementById('modal-whatsapp').setAttribute('data-target-phone', cleanPhone);
+                document.getElementById('modal-whatsapp').classList.remove('hidden');
+            }
+
+            closeWhatsAppModal() {
+                document.getElementById('modal-whatsapp').classList.add('hidden');
+            }
+
+            sendWhatsAppDirect() {
+                const phone = document.getElementById('modal-whatsapp').getAttribute('data-target-phone');
+                const text = encodeURIComponent(document.getElementById('wa-message-text').value);
+                if (!phone) {
+                    this.showToast('Número de WhatsApp inválido para este cliente.', 'error');
+                    return;
+                }
+                window.open(`https://wa.me/55${phone}?text=${text}`, '_blank');
+                this.closeWhatsAppModal();
+            }
+
+            printOS(osId) {
+                const os = this.osList.find(o => o.id === osId);
+                if (!os) return;
+
+                // Fill print element data
+                document.getElementById('print-store-name').innerText = this.settings.storeName;
+                document.getElementById('print-store-address').innerText = this.settings.storeAddress;
+                document.getElementById('print-store-phone').innerText = `WhatsApp: ${this.settings.storePhone} | CNPJ: ${this.settings.storeCNPJ}`;
+
+                document.getElementById('print-os-number').innerText = `ORDEM DE SERVIÇO Nº ${os.id}`;
+                document.getElementById('print-os-date').innerText = `Data: ${this.formatDate(os.createdAt)}`;
+                document.getElementById('print-os-status').innerText = os.status;
+
+                document.getElementById('print-client-name').innerText = os.clientName || '-';
+                document.getElementById('print-client-phone').innerText = os.clientPhone || '-';
+                document.getElementById('print-client-cpf').innerText = os.clientCPF || '-';
+
+                document.getElementById('print-device-name').innerText = `${os.brand} ${os.model}`;
+                document.getElementById('print-device-color').innerText = os.color || 'Não informada';
+                document.getElementById('print-device-password').innerText = os.password || 'Sem senha';
+                document.getElementById('print-device-imei').innerText = os.imei || 'Não informado';
+
+                document.getElementById('print-device-problem').innerText = os.problem || 'Nenhum informado';
+
+                document.getElementById('print-cost-parts').innerText = this.formatCurrency(os.costParts);
+                document.getElementById('print-cost-labor').innerText = this.formatCurrency(os.costLabor);
+                document.getElementById('print-cost-discount').innerText = this.formatCurrency(os.costDiscount);
+                document.getElementById('print-cost-total').innerText = this.formatCurrency(os.total);
+
+                document.getElementById('print-warranty-terms').innerText = this.settings.terms;
+                document.getElementById('print-sig-client-name').innerText = os.clientName || 'Assinatura do Cliente';
+                document.getElementById('print-sig-store-name').innerText = this.settings.storeName;
+
+                // Checklist grid in print
+                const chkGrid = document.getElementById('print-checklist-grid');
+                chkGrid.innerHTML = '';
+                if (os.checklist) {
+                    Object.entries(os.checklist).forEach(([item, val]) => {
+                        const isOk = val === 'OK';
+                        chkGrid.innerHTML += `
+                            <div class="flex items-center justify-between p-1 bg-slate-50 border border-slate-200">
+                                <span>${item}</span>
+                                <strong class="${isOk ? 'text-emerald-700' : 'text-rose-700'}">${val}</strong>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Photos grid in print
+                const photosGrid = document.getElementById('print-photos-grid');
+                photosGrid.innerHTML = '';
+                if (os.photos && os.photos.length > 0) {
+                    os.photos.forEach(p => {
+                        photosGrid.innerHTML += `
+                            <div class="border border-slate-300 rounded overflow-hidden text-center bg-slate-50">
+                                <img src="${p.dataUrl}" class="w-full h-20 object-cover">
+                                <span class="block text-[9px] font-bold py-0.5 bg-slate-200">${p.tag}</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    photosGrid.innerHTML = `<p class="col-span-full text-slate-400 italic">Nenhuma foto registrada para este laudo.</p>`;
+                }
+
+                // Trigger window print
+                const printArea = document.getElementById('print-area');
+                printArea.classList.remove('hidden');
+                window.print();
+                printArea.classList.add('hidden');
+            }
+
+            /* Toast Notification Helper */
+            showToast(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+
+                const colors = {
+                    success: 'bg-emerald-600 text-white',
+                    error: 'bg-rose-600 text-white',
+                    info: 'bg-blue-600 text-white'
+                };
+
+                toast.className = `p-3 px-4 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto ${colors[type] || colors.info}`;
+                toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;
+
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-2', 'opacity-0');
+                }, 10);
+
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
+        }
+
+        let app;
+        window.onload = function() {
+            app = new TiagoAssistenciaApp();
+        };
+    </script>
+</body>
+</html>
